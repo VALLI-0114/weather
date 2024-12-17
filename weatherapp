@@ -1,0 +1,87 @@
+import urllib.request
+import json
+from datetime import datetime
+
+api_key = "8cec81656ca03113adc2756a57aa9b86"
+
+def get_weather(city):
+    """Fetches current weather data for the city."""
+    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
+
+    try:
+        with urllib.request.urlopen(url) as response:
+            data = json.load(response)
+            return data
+    except urllib.error.URLError:
+        print(f"Failed to fetch weather data for {city}")
+        return None
+    except json.JSONDecodeError:
+        print(f"Failed to decode the response for {city}")
+        return None
+
+def get_forecast(city):
+    """Fetches 2-day weather forecast for the city."""
+    url = f"https://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
+
+    try:
+        with urllib.request.urlopen(url) as response:
+            data = json.load(response)
+            return data
+    except urllib.error.URLError:
+        print(f"Failed to fetch weather forecast for {city}")
+        return None
+    except json.JSONDecodeError:
+        print(f"Failed to decode the forecast response for {city}")
+        return None
+
+def print_weather(data):
+    """Prints the current weather information."""
+    city_name = data.get('name', "Unknown")  
+    temperature = data['main'].get('temp', "N/A")
+    humidity = data['main'].get('humidity', "N/A")
+    weather_description = data['weather'][0].get('description', "No description available")
+    
+    print(f"\nCurrent Weather in {city_name}:")
+    print(f"Temperature: {temperature}°C")
+    print(f"Weather: {weather_description}")
+    print(f"Humidity: {humidity}%\n")
+
+def print_forecast(forecast_data):
+    """Prints the 2-day weather forecast."""
+    print("2-Day Weather Forecast:")
+    forecast_days = {}  
+
+    for entry in forecast_data['list']:
+        date = datetime.utcfromtimestamp(entry['dt']).strftime('%Y-%m-%d %H:%M:%S')
+        temperature = entry['main']['temp']
+        weather_description = entry['weather'][0]['description']
+        humidity = entry['main']['humidity']
+        date_only = date.split(" ")[0]
+        
+        if date_only not in forecast_days:
+            forecast_days[date_only] = []
+
+        forecast_days[date_only].append({
+            'time': date,
+            'temp': temperature,
+            'description': weather_description,
+            'humidity': humidity
+        })
+    for day, forecasts in forecast_days.items():
+        print(f"\nForecast for {day}:")
+        for forecast in forecasts:
+            print(f"  Time: {forecast['time']}")
+            print(f"  Temperature: {forecast['temp']}°C")
+            print(f"  Weather: {forecast['description']}")
+            print(f"  Humidity: {forecast['humidity']}%\n")
+city = input("Enter the city name: ")
+weather_data = get_weather(city)
+if weather_data:
+    print_weather(weather_data)
+else:
+    print("Failed to retrieve current weather data.")
+forecast_data = get_forecast(city)
+if forecast_data:
+    print_forecast(forecast_data)
+else:
+    print("Failed to retrieve weather forecast data.")
